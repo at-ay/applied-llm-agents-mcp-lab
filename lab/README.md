@@ -26,13 +26,17 @@ You don't need Node.js: the lab uses Tavily's **remote** MCP server, so nothing 
 
 ### Setup
 
-Run everything from the `07-agents` folder.
+Run everything from the top folder of the repository: the one with `pyproject.toml` in it.
 
 1. Install the dependencies:
    ```
    uv sync
    ```
-2. Create a file called `.env` in the `07-agents` folder (it's already in `.gitignore`):
+2. Copy `.env.example` to `.env` in the same folder:
+   ```
+   cp .env.example .env
+   ```
+   Then open `.env` and put your two keys after the `=` signs, with no quotes or spaces. `.env` is already in `.gitignore`, so it won't be committed:
    ```
    OPENROUTER_API_KEY=...
    TAVILY_API_KEY=...
@@ -276,7 +280,7 @@ Fill in the Word answer sheet, [lab-sheet.docx](lab-sheet.docx). It has a box fo
 
 | Problem | Likely cause |
 |---|---|
-| 401 / "invalid API key" | wrong key in `.env`, or `.env` not loaded (run from the `07-agents` folder) |
+| 401 / "invalid API key" | wrong key in `.env`, or `.env` not loaded (it must be in the repository's top folder, and you must run from there) |
 | 402 from OpenRouter | your key's spending limit is used up; ask the instructor |
 | Tavily "rate limited" or out of credits | wait, or check your usage on the Tavily dashboard |
 | "Tool call limit reached" in the trace | the agent hit `MAX_SEARCHES`; check the trace for a search loop |

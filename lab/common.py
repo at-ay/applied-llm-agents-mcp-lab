@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field
 
 import config
 
-MODULE = Path(__file__).resolve().parent.parent  # the 07-agents folder
+MODULE = Path(__file__).resolve().parent.parent  # the top folder (the one with pyproject.toml)
 DATA = MODULE / "data"
 load_dotenv(MODULE / ".env")
 
@@ -41,7 +41,7 @@ def make_model(effort=None):
     """Claude Haiku 5.5 through OpenRouter. OpenRouter calls the effort setting 'verbosity'."""
     key = os.environ.get("OPENROUTER_API_KEY")
     if not key:
-        raise SystemExit("OPENROUTER_API_KEY is missing: put it in the .env file in the 07-agents folder.")
+        raise SystemExit("OPENROUTER_API_KEY is missing: put it in .env in the top folder (copy .env.example to .env first).")
     return ChatOpenAI(model=config.MODEL, base_url=config.OPENROUTER_BASE_URL, api_key=key,
                       extra_body={"verbosity": effort or config.EFFORT})
 
@@ -54,7 +54,7 @@ def tavily_client(trusted_domains=None):
     """
     key = os.environ.get("TAVILY_API_KEY")
     if not key:
-        raise SystemExit("TAVILY_API_KEY is missing: put it in the .env file in the 07-agents folder.")
+        raise SystemExit("TAVILY_API_KEY is missing: put it in .env in the top folder (copy .env.example to .env first).")
     headers = {"Authorization": f"Bearer {key}"}
     if trusted_domains:
         headers["DEFAULT_PARAMETERS"] = json.dumps({"include_domains": list(trusted_domains)})

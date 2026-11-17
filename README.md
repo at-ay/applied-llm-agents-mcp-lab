@@ -10,11 +10,12 @@ The week 7 lab of the Applied LLM Course: agents and MCP.
 ## Files
 
 ```
-07-agents/
+applied-llm-agents-mcp-lab/
 ├── README.md
 ├── pyproject.toml        dependencies, for uv
 ├── uv.lock               exact versions, for uv
-├── .env                  your two API keys (you create it; never share or commit it)
+├── .env.example          the template for .env
+├── .env                  your two API keys (you create it from .env.example; never share or commit it)
 ├── data/
 │   ├── claims.csv             the claims to check
 │   └── expected.csv           the answer key
@@ -37,12 +38,20 @@ You need [uv](https://docs.astral.sh/uv/), as in earlier weeks. From this folder
 uv sync
 ```
 
-Then create `.env` in this folder with your two keys:
+Then copy the template to `.env`:
+
+```bash
+cp .env.example .env
+```
+
+and put your two keys in `.env`, after the `=` signs, with no quotes or spaces:
 
 ```
 OPENROUTER_API_KEY=...
 TAVILY_API_KEY=...
 ```
+
+`.env` is in `.gitignore`, so git won't commit it. Never share it or put it in a screenshot.
 
 and check the setup:
 
