@@ -7,8 +7,8 @@ c05,true,https://www.tavily.com/pricing,2026-11-17
 c06,false,https://docs.langchain.com/oss/python/migrate/langchain-v1,2026-11-17
 c07,true,https://huggingface.co/meta-llama/Llama-3.2-3B,2026-11-17
 c08,cant_tell,,2026-11-17
-c09,true,https://modelcontextprotocol.io/specification/latest/basic/transports,2026-11-17
-c10,false,https://modelcontextprotocol.io/specification/latest/basic/versioning,2026-11-17
+c09,true,https://modelcontextprotocol.io/specification/2026-07-28/basic/transports,2026-11-17
+c10,false,https://modelcontextprotocol.io/specification/2026-07-28/basic/versioning,2026-11-17
 c11,false,https://openrouter.ai/docs/faq,2026-11-17
 c12,true,https://openrouter.ai/anthropic/claude-haiku-5.5 https://openrouter.ai/google/gemini-2.5-flash,2026-11-17
 c13,cant_tell,https://arxiv.org/abs/2303.08774,2026-11-17

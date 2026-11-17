@@ -232,7 +232,8 @@ async def run_batch(check, claims, out_path):
                   f"${stats.get('cost', 0):.4f}  {row['seconds']:5.1f}s" + (f"  ERROR {row['error']}" if "error" in row else ""))
 
     start = time.time()
-    await asyncio.gather(*(one(i, c) for i, c in enumerate(claims)))
+    await one(0, claims[0])  # the first claim alone: a mistake shows up before the others run
+    await asyncio.gather(*(one(i, c) for i, c in enumerate(claims) if i > 0))
     out = MODULE / out_path
     with open(out, "w", encoding="utf-8") as f:
         for row in rows:

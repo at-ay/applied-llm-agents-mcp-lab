@@ -50,11 +50,15 @@ def score(name, key):
         a, k = answers[cid], key[cid]
         o = outcome(a, k)
         counts[o] += 1
-        note = f"  ({a['check_failed']})" if a.get("check_failed") else ""
+        note = f"  (ERROR: {a['error']})" if a.get("error") else f"  ({a['check_failed']})" if a.get("check_failed") else ""
         print(f"{cid:6} {k['verdict']:9} {a['verdict']:9} {o:13} {a.get('tool_calls', 0):5} ${a.get('cost', 0):.4f}{note}")
     total = lambda f: sum(a.get(f, 0) for a in answers.values())
     print(f"\nCorrect {counts['correct']} · Wrong {counts['wrong']} · Overconfident {counts['overconfident']}"
           f"  (of {len(key)} claims{f'; missing: {missing}' if missing else ''})")
+    errors = sorted(c for c, a in answers.items() if a.get("error"))
+    if errors:
+        print(f"\n{len(errors)} claim(s) crashed and were recorded as cant_tell: {', '.join(errors)}. "
+              "Look at the error, fix it, and run the whole file again.")
     print("\nFor the Q6 table:")
     print("| Correct | Wrong | Overconfident | Tool calls | Input tokens | Output tokens | Tavily calls | Cost |")
     print(f"| {counts['correct']} | {counts['wrong']} | {counts['overconfident']} | {total('tool_calls')} | "

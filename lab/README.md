@@ -20,7 +20,7 @@ You will find out:
 |---|---|
 | Python, uv, the lab repository | as in earlier labs |
 | OpenRouter API key | given to you by the instructor. It has a spending limit; don't share it |
-| Tavily API key | create a free account at tavily.com. No credit card needed. The free plan gives 1,000 credits a month |
+| Tavily API key | create a free account at tavily.com; the free plan is enough for this lab |
 
 You don't need Node.js: the lab uses Tavily's **remote** MCP server, so nothing runs on your laptop except Python.
 
@@ -53,6 +53,7 @@ Run everything from the top folder of the repository: the one with `pyproject.to
 
 | File | Contents |
 |---|---|
+| `.env.example` | the template for your .env file: copy it to .env and add your two keys |
 | `lab/config.py` | model name, effort level, trusted domains, limits. All settings live here |
 | `lab/common.py` | helpers: connect to Tavily, load claims, measure tool-definition tokens, sum tokens and cost, print a trace |
 | `data/claims.csv` | 14 claims to check (`claim_id`, `claim`) |
@@ -135,7 +136,7 @@ The key goes in a header, not in the URL: URLs end up in logs and error messages
 ### Q2: The baseline (`lab/q2_baseline.py`)
 
 The baseline is given complete. It makes no decisions. For each claim it:
-1. calls the `tavily_search` tool **directly from Python** (`await search_tool.ainvoke({"query": claim})`, not through an agent), with the claim text as the query;
+1. calls the `tavily_search` tool **directly from Python** (`await search.ainvoke({"query": claim["claim"], "max_results": 3})`, not through an agent), with the claim text as the query;
 2. takes the top 3 results;
 3. makes **one** model call with the claim and the 3 snippets, asking for a verdict, a source URL and a quote.
 
@@ -143,7 +144,7 @@ It uses the same Pydantic schema as the agent (Q3), with `model.with_structured_
 
 **YOUR TURN**
 1. Read `check_claim_baseline(claim)` and find the three steps above in the code.
-2. Run all claims, write `answers_baseline.jsonl`, and score it:
+2. Run all claims with `uv run python lab/q2_baseline.py`, which writes `answers_baseline.jsonl`, and score it:
    ```
    uv run python lab/score.py answers_baseline.jsonl
    ```
@@ -153,7 +154,7 @@ It uses the same Pydantic schema as the agent (Q3), with `model.with_structured_
 
 ### Q3: The agent, minimal version (`lab/q3_agent.py`)
 
-Build the agent with the two tools, a one-line system prompt and a structured output schema:
+Build the agent with the two tools, a one-line system prompt and a structured output schema. The schema, `ClaimVerdict`, is already in `common.py`: read it, don't write it again. You write the `create_agent` call in `build_agent()`, and run the agent in `check_claim()`:
 
 ```python
 class ClaimVerdict(BaseModel):
@@ -176,9 +177,10 @@ The field description matters: without it, the model writes a summary ("The page
 Every agent run (Q3 to Q5) has a safety cap: at most `MAX_MODEL_CALLS` model calls per claim (12, set in `config.py`). A run that hits the cap stops without an answer and is recorded as `cant_tell`, with `check_failed` set to `no answer (model call limit)`. Don't raise the cap to make a run finish: look at its trace instead.
 
 **YOUR TURN**
+
 1. Run the agent on **one** claim of your choice and print the full trace: `uv run python lab/q3_agent.py --claim c01` prints it with `print_trace(result["messages"])`. Which searches did it run? Which pages did it extract? Did it search at all?
-2. Run the agent on all claims and write `answers_q3.jsonl`. For each claim, record the number of tool calls, input and output tokens, and the number of Tavily calls. The agent returns its structured answer as one extra tool call, named `ClaimVerdict`: don't count it.
-3. Score the file. Print the total cost of the run: the sum of `response_metadata["token_usage"]["cost"]` over the model's messages (`common.py` has `run_cost(messages)`).
+2. Run the agent on all claims with `uv run python lab/q3_agent.py`, which writes `answers_q3.jsonl`. For each claim, the script records the number of tool calls, input and output tokens, the number of Tavily calls, and the cost. The agent returns its structured answer as one extra tool call, named `ClaimVerdict`: it isn't counted.
+3. Score the file with `uv run python lab/score.py answers_q3.jsonl`. It also prints the run's total cost: the sum of `response_metadata["token_usage"]["cost"]` over the model's messages (`run_cost(messages)` in `common.py`).
 
 **Think about**
 - Find one claim the agent answered without searching, or from a snippet alone. Was the answer right?
@@ -197,7 +199,7 @@ Replace the one-line prompt with a real system prompt. Write it yourself as a pl
 
 **YOUR TURN**
 1. Write the prompt in `SYSTEM_PROMPT`.
-2. Run all claims, write `answers_q4.jsonl`, and score it.
+2. Run all claims with `uv run python lab/q4_prompt.py`, which writes `answers_q4.jsonl`, and score it.
 3. Compare with Q3: how many answers were **overconfident** (true or false where the key says `cant_tell`)?
 
 **Think about**
@@ -209,30 +211,26 @@ Replace the one-line prompt with a real system prompt. Write it yourself as a pl
 Some rules must never be broken: a verdict must not cite a page that was never retrieved, or quote text that isn't on it. A prompt can only ask for this. Code can enforce it.
 
 **YOUR TURN**
-1. Write `check_answer(answer, messages)`. It returns the answer unchanged if both checks pass:
+
+1. Write the checks in `check_answer(answer, messages)`: first `normalise(text)`, then the two checks. The answer stays unchanged if both pass:
    - `source_url` appears in the output of a tool call in this run;
    - `evidence` appears in the output of a tool call in this run, a search snippet or an extracted page (compare after normalising whitespace, case and quote marks).
 
-   If either check fails, it returns the answer with `verdict="cant_tell"` and records which check failed.
-2. Limit searches to a list of trusted domains. Set the list in `config.py` and pass it to the server, not to the model. The Tavily server reads default search options from a `DEFAULT_PARAMETERS` header, and these win over anything the model sends:
+   If either check fails, the given code returns the answer with `verdict="cant_tell"` and records which check failed in `check_failed`. `retrieved(messages)` in `common.py` gives you everything the tools returned.
+2. Limit searches to a list of trusted domains: set `TRUSTED_DOMAINS` in `config.py`. The list goes to the server, not to the model: `tavily_client()` in `common.py` sends it in Tavily's `DEFAULT_PARAMETERS` header, and the server's defaults win over anything the model asks for:
    ```python
    "headers": {
        "Authorization": f"Bearer {os.environ['TAVILY_API_KEY']}",
        "DEFAULT_PARAMETERS": json.dumps({"include_domains": TRUSTED_DOMAINS}),
    },
    ```
-3. Limit the agent's searches with LangChain's call-limit middleware:
+3. Limit the agent's searches with LangChain's call-limit middleware: set `MIDDLEWARE` in `q5_checks.py`. `main()` passes it to `create_agent`, together with the safety cap:
    ```python
-   from langchain.agents.middleware import ToolCallLimitMiddleware
-
-   agent = create_agent(
-       model, tools, system_prompt=SYSTEM_PROMPT, response_format=ClaimVerdict,
-       middleware=[ToolCallLimitMiddleware(tool_name="tavily_search", run_limit=MAX_SEARCHES,
-                                           exit_behavior="continue")],
-   )
+   MIDDLEWARE = [ToolCallLimitMiddleware(tool_name="tavily_search", run_limit=config.MAX_SEARCHES,
+                                         exit_behavior="continue")]
    ```
-   With `"continue"`, searches over the limit are blocked with an error message and the agent still has to give a verdict. (With `"end"`, the run stops and `result["structured_response"]` is `None`. Your code would then have to record `cant_tell`.)
-4. Run all claims with your Q4 prompt plus these checks, write `answers_q5.jsonl`, and score it.
+   With `"continue"`, searches over the limit are blocked with an error message and the agent still has to give a verdict. (With `"end"`, the run would stop with no answer, and be recorded as `cant_tell`.)
+4. Run all claims with your Q4 prompt plus these checks: `uv run python lab/q5_checks.py` writes `answers_q5.jsonl`. Score it.
 
 **Think about**
 - How many answers did the checks change? Were those answers wrong before?
