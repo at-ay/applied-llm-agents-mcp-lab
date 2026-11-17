@@ -64,6 +64,20 @@ Run everything from the top folder of the repository: the one with `pyproject.to
 
 The starter files stop with a "fill in" message until you complete each `YOUR TURN` part.
 
+### Running the scripts
+
+Every question's script (`q2` to `q5`) runs in two ways: on all claims, or on one claim to look at it closely. `q3_agent.py` stands for any of them below.
+
+| Command | What it does |
+|---|---|
+| `uv run python lab/q3_agent.py` | runs all 14 claims, a few at a time, and prints one line per claim (verdict, tool calls, cost, seconds). Writes `answers_q3.jsonl` |
+| `uv run python lab/q3_agent.py --claim c03` | runs one claim only and prints it in full: the trace of every step for Q3 to Q5, the three snippets and the answer for Q2. Writes no file, so your answers and scores don't change |
+| `uv run python lab/q3_agent.py --limit 3` | runs the first 3 claims as a batch and writes the answers file: a quick test before the full run |
+| `uv run python lab/score.py answers_q3.jsonl` | scores an answers file against the key, claim by claim, and prints its row for the Q6 table |
+| `uv run python lab/score.py answers_q3.jsonl --compare answers_q5.jsonl` | compares two answers files: a 2×2 table of right and wrong, the claims only one of them got right, and a sign test that says whether the difference could be chance |
+
+The claim ids are in `data/claims.csv` (`c01` to `c14`). Every script also accepts `--help`.
+
 ---
 
 ## 2. Background
