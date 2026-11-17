@@ -1,0 +1,15 @@
+[project]
+name = "applied-llm-agents"
+version = "0.1.0"
+description = "Agents and MCP lab for the Applied LLM Course: a claim-checking agent with Tavily's MCP server and Claude Haiku 5.5 through OpenRouter"
+requires-python = ">=3.11"
+dependencies = [
+    "langchain==1.4.8",
+    "langchain-openai==1.8.0",
+    "langchain-mcp-adapters==0.3.2",
+    "mcp==1.30.0",
+    "python-dotenv==1.2.4",
+]
+
+[tool.uv]
+package = false
